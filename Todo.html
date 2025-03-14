@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.1/css/all.min.css" />
+    <style>
+        body {
+            background-color: #f2f2f2;
+        }
+        .todo-app {
+            max-width: 400px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .folder-list {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="todo-app">
+        <h1>Todo App</h1>
+        <div class="folder-list">
+            <h5>Folders</h5>
+            <ul id="folder-list" class="list-group"></ul>
+            <button id="create-folder-btn" class="btn btn-primary mt-2">Create Folder</button>
+        </div>
+        <div class="mb-3">
+            <select id="folder-select" class="form-select">
+                <option value="all">All Folders</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <input type="text" id="todo-input" placeholder="Add new todo item" class="form-control">
+        </div>
+        <div class="mb-3">
+            <input type="date" id="due-date" class="form-control">
+        </div>
+        <div class="mb-3">
+            <select id="priority" class="form-select">
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+            </select>
+        </div>
+        <button id="add-todo-btn" class="btn btn-primary mb-3">Add Todo</button>
+        <ul id="todo-list" class="list-group mb-3"></ul>
+        <button id="all-btn" class="btn btn-secondary mb-1">All</button>
+        <button id="completed-btn" class="btn btn-secondary mb-1">Completed</button>
+        <button id="pending-btn" class="btn btn-secondary mb-1">Pending</button>
+        <button id="about-btn" class="btn btn-secondary mb-3" data-bs-toggle="modal" data-bs-target="#about-modal">About</button>
+    </div>
+
+    <div class="modal fade" id="edit-modal" tabindex="-1" aria-labelledby="edit-modal-label" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="edit-modal-label">Edit Todo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" id="edit-todo-input" class="form-control">
+                    <input type="date" id="edit-due-date" class="form-control mt-3">
+                    <select id="edit-priority" class="form-select mt-3">
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                    <select id="edit-folder-select" class="form-select mt-3">
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" id="save-edit-btn" class="btn btn-primary">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="create-folder-modal" tabindex="-1" aria-labelledby="create-folder-modal-label" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="create-folder-modal-label">Create Folder</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="text" id="create-folder-input" class="form-control" placeholder="Folder name">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" id="save-create-folder-btn" class="btn btn-primary">Create Folder</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="about-modal" tabindex="-1" aria-labelledby="about-modal-label" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="about-modal-label">About Todo App</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    This is a simple todo app built using HTML, CSS, and JavaScript. It allows you to add new todo items, mark them as completed, and remove them.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-kenU1KFdBIe4zVF0s0G1M5b4hcpxyD9F7jL+jjXkk+Q2h455rYXK/7HAuoJl+0I4" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        let todoList = JSON.parse(localStorage.getItem('todoList')) || {};
+        let folders = JSON.parse(localStorage.getItem('folders')) || [];
+        const folderListElement = document.getElementById('folder-list');
+        const folderSelect = document.getElementById('folder-select');
+        const createFolderBtn = document.getElementById('create-folder-btn');
+        const todoInput = document.getElementById('todo-input');
+        const dueDateInput = document.getElementById('due-date');
+        const prioritySelect = document.getElementById('priority');
+        const addTodoBtn = document.getElementById('add-todo-btn');
+        const todoListElement = document.getElementById('todo-list');
+        const allBtn = document.getElementById('all-btn');
+        const completedBtn = document.getElementById('completed-btn');
+        const pendingBtn = document.getElementById('pending-btn');
+        const editModal = document.getElementById('edit-modal');
+        const editTodoInput = document.getElementById('edit-todo-input');
+        const editDueDate = document.getElementById('edit-due-date');
+        const editPrioritySelect = document.getElementById('edit-priority');
+        const editFolderSelect = document.getElementById('edit-folder-select');
+        const saveEditBtn = document.getElementById('save-edit-btn');
+        const createFolderModal = document.getElementById('create-folder-modal');
+        const createFolderInput = document.getElementById('create-folder-input');
+        const saveCreateFolderBtn = document.getElementById('save-create-folder-btn');
+        let currentEditIndex = null;
+        let currentFolder = 'all';
+
+        createFolderBtn.addEventListener('click', () => createFolderModal.modal('show'));
+        saveCreateFolderBtn.addEventListener('click', createFolder);
+        addTodoBtn.addEventListener('click', addTodoItem);
+        allBtn.addEventListener('click', () => renderTodoList());
+        completedBtn.addEventListener('click', () => renderTodoList('completed'));
+        pendingBtn.addEventListener('click', () => renderTodoList('pending'));
+        saveEditBtn.addEventListener('click', saveEdit);
+
+        function createFolder() {
+            const folderName = createFolderInput.value.trim();
+            if (folderName) {
+                folders.push(folderName);
+                todoList[folderName] = todoList[folderName] || [];
+                renderFolderList();
+                createFolderModal.modal('hide');
+                createFolderInput.value = '';
+                localStorage.setItem('folders', JSON.stringify(folders));
+                localStorage.setItem('todoList', JSON.stringify(todoList));
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Folder created',
+                    text: 'Folder has been created successfully',
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Please enter a folder name',
+                });
+            }
+        }
+
+        function addTodoItem() {
+            const todoText = todoInput.value.trim();
+            const dueDate = dueDateInput.value;
+            const priority = prioritySelect.value;
+            if (todoText && dueDate) {
+                const folder = folderSelect.value;
+                if (folder === 'all') {
+                    const newFolderSelect = prompt('Please select a folder');
+                    if (newFolderSelect) {
+                        folders.push(newFolderSelect);
+                        todoList[newFolderSelect] = todoList[newFolderSelect] || [];
+                        const todoItem = {
+                            text: todoText,
+                            dueDate,
+                            priority,
+                            completed: false
+                        };
+                        todoList[newFolderSelect].push(todoItem);
+                        renderTodoList();
+                        todoInput.value = '';
+                        dueDateInput.value = '';
+                        prioritySelect.value = 'low';
+                        localStorage.setItem('folders', JSON.stringify(folders));
+                        localStorage.setItem('todoList', JSON.stringify(todoList));
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Todo added',
+                            text: 'Todo item has been added successfully',
+                        });
+                    }
+                } else {
+                    const todoItem = {
+                        text: todoText,
+                        dueDate,
+                        priority,
+                        completed: false
+                    };
+                    todoList[folder].push(todoItem);
+                    renderTodoList();
+                    todoInput.value = '';
+                    dueDateInput.value = '';
+                    prioritySelect.value = 'low';
+                    localStorage.setItem('todoList', JSON.stringify(todoList));
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Todo added',
+                        text: 'Todo item has been added successfully',
+                    });
+                }
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Please fill in all fields',
+                });
+            }
+        }
+
+        function renderFolderList() {
+            folderListElement.innerHTML = '';
+            folderSelect.innerHTML = '<option value="all">All Folders</option>';
+            editFolderSelect.innerHTML = '';
+            folders.forEach((folder) => {
+                const folderListItem = document.createElement('li');
+                folderListItem.classList.add('list-group-item');
+                folderListItem.textContent = folder;
+                const deleteBtn = document.createElement('button');
+                deleteBtn.classList.add('btn', 'btn-danger', 'float-end');
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.addEventListener('click', () => {
+                    const index = folders.indexOf(folder);
+                    if (index !== -1) {
+                        folders.splice(index, 1);
+                        delete todoList[folder];
+                        renderFolderList();
+                        localStorage.setItem('folders', JSON.stringify(folders));
+                        localStorage.setItem('todoList', JSON.stringify(todoList));
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Folder deleted',
+                            text: 'Folder has been deleted successfully',
+                        });
+                    }
+                });
+                folderListItem.appendChild(deleteBtn);
+                folderListElement.appendChild(folderListItem);
+                const folderOption = document.createElement('option');
+                folderOption.value = folder;
+                folderOption.textContent = folder;
+                folderSelect.appendChild(folderOption);
+                const editFolderOption = document.createElement('option');
+                editFolderOption.value = folder;
+                editFolderOption.textContent = folder;
+                editFolderSelect.appendChild(editFolderOption);
+            });
+        }
+
+        function renderTodoList(status) {
+            todoListElement.innerHTML = '';
+            if (currentFolder === 'all') {
+                folders.forEach((folder) => {
+                    todoList[folder].forEach((todoItem, index) => {
+                        if (status === 'completed' && !todoItem.completed) return;
+                        if (status === 'pending' && todoItem.completed) return;
+                        const todoListItem = document.createElement('li');
+                        todoListItem.classList.add('list-group-item');
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.checked = todoItem.completed;
+                        checkbox.addEventListener('change', () => {
+                            todoItem.completed = checkbox.checked;
+                            if (todoItem.completed) {
+                                todoListItem.classList.add('text-decoration-line-through');
+                            } else {
+                                todoListItem.classList.remove('text-decoration-line-through');
+                            }
+                            localStorage.setItem('todoList', JSON.stringify(todoList));
+                        });
+                        const todoText = document.createElement('span');
+                        todoText.textContent = todoItem.text;
+                        const dueDateText = document.createElement('span');
+                        dueDateText.textContent = `Due: ${todoItem.dueDate}`;
+                        dueDateText.style.fontWeight = 'bold';
+                        const priorityText = document.createElement('span');
+                        priorityText.textContent = `Priority: ${todoItem.priority}`;
+                        const editBtn = document.createElement('button');
+                        editBtn.classList.add('btn', 'btn-info', 'float-end');
+                        editBtn.textContent = 'Edit';
+                        editBtn.addEventListener('click', () => {
+                            currentEditIndex = index;
+                            editTodoInput.value = todoItem.text;
+                            editDueDate.value = todoItem.dueDate;
+                            editPrioritySelect.value = todoItem.priority;
+                            editFolderSelect.value = folder;
+                            editModal.modal('show');
+                        });
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.classList.add('btn', 'btn-danger', 'float-end');
+                        deleteBtn.textContent = 'Delete';
+                        deleteBtn.addEventListener('click', () => {
+                            todoList[folder].splice(index, 1);
+                            renderTodoList();
+                            localStorage.setItem('todoList', JSON.stringify(todoList));
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Todo deleted',
+                                text: 'Todo item has been deleted successfully',
+                            });
+                        });
+                        todoListItem.appendChild(checkbox);
+                        todoListItem.appendChild(todoText);
+                        todoListItem.appendChild(document.createTextNode(' '));
+                        todoListItem.appendChild(dueDateText);
+                        todoListItem.appendChild(document.createTextNode(' '));
+                        todoListItem.appendChild(priorityText);
+                        todoListItem.appendChild(document.createTextNode(' '));
+                        todoListItem.appendChild(editBtn);
+                        todoListItem.appendChild(deleteBtn);
+                        todoListElement.appendChild(todoListItem);
+                    });
+                });
+            } else {
+                todoList[currentFolder].forEach((todoItem, index) => {
+                    if (status === 'completed' && !todoItem.completed) return;
+                    if (status === 'pending' && todoItem.completed) return;
+                    const todoListItem = document.createElement('li');
+                    todoListItem.classList.add('list-group-item');
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = todoItem.completed;
+                    checkbox.addEventListener('change', () => {
+                        todoItem.completed = checkbox.checked;
+                        if (todoItem.completed) {
+                            todoListItem.classList.add('text-decoration-line-through');
+                        } else {
+                            todoListItem.classList.remove('text-decoration-line-through');
+                        }
+                        localStorage.setItem('todoList', JSON.stringify(todoList));
+                    });
+                    const todoText = document.createElement('span');
+                    todoText.textContent = todoItem.text;
+                    const dueDateText = document.createElement('span');
+                    dueDateText.textContent = `Due: ${todoItem.dueDate}`;
+                    dueDateText.style.fontWeight = 'bold';
+                    const priorityText = document.createElement('span');
+                    priorityText.textContent = `Priority: ${todoItem.priority}`;
+                    const editBtn = document.createElement('button');
+                    editBtn.classList.add('btn', 'btn-info', 'float-end');
+                    editBtn.textContent = 'Edit';
+                    editBtn.addEventListener('click', () => {
+                        currentEditIndex = index;
+                        editTodoInput.value = todoItem.text;
+                        editDueDate.value = todoItem.dueDate;
+                        editPrioritySelect.value = todoItem.priority;
+                        editFolderSelect.value = currentFolder;
+                        editModal.modal('show');
+                    });
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.classList.add('btn', 'btn-danger', 'float-end');
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.addEventListener('click', () => {
+                        todoList[currentFolder].splice(index, 1);
+                        renderTodoList();
+                        localStorage.setItem('todoList', JSON.stringify(todoList));
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Todo deleted',
+                            text: 'Todo item has been deleted successfully',
+                        });
+                    });
+                    todoListItem.appendChild(checkbox);
+                    todoListItem.appendChild(todoText);
+                    todoListItem.appendChild(document.createTextNode(' '));
+                    todoListItem.appendChild(dueDateText);
+                    todoListItem.appendChild(document.createTextNode(' '));
+                    todoListItem.appendChild(priorityText);
+                    todoListItem.appendChild(document.createTextNode(' '));
+                    todoListItem.appendChild(editBtn);
+                    todoListItem.appendChild(deleteBtn);
+                    todoListElement.appendChild(todoListItem);
+                });
+            }
+        }
+
+        function saveEdit() {
+            if (currentEditIndex !== null) {
+                const folder = editFolderSelect.value;
+                const todoItem = todoList[folder][currentEditIndex];
+                todoItem.text = editTodoInput.value;
+                todoItem.dueDate = editDueDate.value;
+                todoItem.priority = editPrioritySelect.value;
+                renderTodoList();
+                localStorage.setItem('todoList', JSON.stringify(todoList));
+                editModal.modal('hide');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Todo edited',
+                    text: 'Todo item has been edited successfully',
+                });
+            }
+        }
+
+        folderSelect.addEventListener('change', (e) => {
+            currentFolder = e.target.value;
+            renderTodoList();
+        });
+
+        renderFolderList();
+        renderTodoList();
+    </script>
+</body>
+</html>
