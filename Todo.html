@@ -37,25 +37,6 @@
         <button id="about-btn" class="btn btn-secondary mb-3" data-bs-toggle="modal" data-bs-target="#about-modal">About</button>
     </div>
 
-    <!-- Modal templates (edit, create folder, about) -->
-    <div class="modal fade" id="edit-modal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title">Edit Todo</h5></div>
-                <div class="modal-body">
-                    <input type="text" id="edit-todo-input" class="form-control mb-2">
-                    <input type="date" id="edit-due-date" class="form-control mb-2">
-                    <select id="edit-priority" class="form-select mb-2"></select>
-                    <select id="edit-folder-select" class="form-select"></select>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" id="save-edit-btn" class="btn btn-primary">Save changes</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="modal fade" id="about-modal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">About Todo App</h5></div>
             <div class="modal-body">This is a simple todo app built using HTML, CSS, and JavaScript.</div>
@@ -78,36 +59,22 @@
         const allBtn = document.getElementById('all-btn');
         const completedBtn = document.getElementById('completed-btn');
         const pendingBtn = document.getElementById('pending-btn');
-        const editModal = document.getElementById('edit-modal');
-        const editTodoInput = document.getElementById('edit-todo-input');
-        const editDueDate = document.getElementById('edit-due-date');
-        const editPrioritySelect = document.getElementById('edit-priority');
-        const editFolderSelect = document.getElementById('edit-folder-select');
-        const saveEditBtn = document.getElementById('save-edit-btn');
-        let currentEditIndex = null;
+        const aboutBtn = document.getElementById('about-btn');
         let currentFolder = 'all';
 
-        // Event listeners
-        document.getElementById('create-folder-btn').addEventListener('click', () => createFolderModal.modal('show'));
+        // Debugging: Check if data is being loaded correctly
+        console.log("Todo List from Local Storage:", todoList);
+        console.log("Folders from Local Storage:", folders);
+
+        document.getElementById('create-folder-btn').addEventListener('click', () => {
+            alert('Folder creation is not yet implemented.');
+        });
         addTodoBtn.addEventListener('click', addTodoItem);
         allBtn.addEventListener('click', () => renderTodoList());
         completedBtn.addEventListener('click', () => renderTodoList('completed'));
         pendingBtn.addEventListener('click', () => renderTodoList('pending'));
-        saveEditBtn.addEventListener('click', saveEdit);
 
         folderSelect.addEventListener('change', (e) => { currentFolder = e.target.value; renderTodoList(); });
-
-        function createFolder() {
-            const folderName = document.getElementById('create-folder-input').value.trim();
-            if (folderName) {
-                folders.push(folderName);
-                todoList[folderName] = [];
-                renderFolderList();
-                localStorage.setItem('folders', JSON.stringify(folders));
-                localStorage.setItem('todoList', JSON.stringify(todoList));
-                Swal.fire({ icon: 'success', title: 'Folder created', text: 'Folder has been created successfully' });
-            }
-        }
 
         function addTodoItem() {
             const todoText = todoInput.value.trim(), dueDate = dueDateInput.value, priority = prioritySelect.value;
@@ -141,7 +108,7 @@
             });
         }
 
-        function renderTodoList(status) {
+        function renderTodoList(status = 'all') {
             todoListElement.innerHTML = '';
             const filteredTodos = currentFolder === 'all' ? [].concat(...Object.values(todoList)) : todoList[currentFolder] || [];
             filteredTodos.filter(todo => (status === 'completed' ? todo.completed : status === 'pending' ? !todo.completed : true))
@@ -149,10 +116,10 @@
                     const todoItemElement = document.createElement('li');
                     todoItemElement.classList.add('list-group-item');
                     todoItemElement.innerHTML = `
-                        <input type="checkbox" ${todoItem.completed ? 'checked' : ''} onchange="toggleCompletion(${currentFolder},${index})">
+                        <input type="checkbox" ${todoItem.completed ? 'checked' : ''} onchange="toggleCompletion('${currentFolder}', ${index})">
                         ${todoItem.text} Due: ${todoItem.dueDate} Priority: ${todoItem.priority}
-                        <button class="btn btn-warning btn-sm" onclick="editTodoItem(${currentFolder}, ${index})">Edit</button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteTodoItem(${currentFolder}, ${index})">Delete</button>`;
+                        <button class="btn btn-warning btn-sm" onclick="editTodoItem('${currentFolder}', ${index})">Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteTodoItem('${currentFolder}', ${index})">Delete</button>`;
                     todoListElement.appendChild(todoItemElement);
                 });
         }
@@ -164,34 +131,10 @@
         }
 
         function editTodoItem(folder, index) {
-            currentEditIndex = index;
             const todo = todoList[folder][index];
-            editTodoInput.value = todo.text;
-            editDueDate.value = todo.dueDate;
-            editPrioritySelect.value = todo.priority;
-            editFolderSelect.value = folder;
-            new bootstrap.Modal(editModal).show();
-        }
-
-        function saveEdit() {
-            const updatedTodo = {
-                text: editTodoInput.value.trim(),
-                dueDate: editDueDate.value,
-                priority: editPrioritySelect.value,
-                completed: todoList[editFolderSelect.value][currentEditIndex].completed
-            };
-            todoList[editFolderSelect.value][currentEditIndex] = updatedTodo;
-            localStorage.setItem('todoList', JSON.stringify(todoList));
-            renderTodoList();
-            bootstrap.Modal.getInstance(editModal).hide();
-        }
-
-        function deleteFolder(folder) {
-            folders.splice(folders.indexOf(folder), 1);
-            delete todoList[folder];
-            renderFolderList();
-            localStorage.setItem('folders', JSON.stringify(folders));
-            localStorage.setItem('todoList', JSON.stringify(todoList));
+            todoInput.value = todo.text;
+            dueDateInput.value = todo.dueDate;
+            prioritySelect.value = todo.priority;
         }
 
         function deleteTodoItem(folder, index) {
